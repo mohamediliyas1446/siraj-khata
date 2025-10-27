@@ -3,7 +3,7 @@ import axios from "axios";
 import "./App.css";
 
 function App() {
-  const API = "http://localhost:5000"; // Backend URL
+  const API = "https://siraj-s-khata.onrender.com"; // Backend URL
 
   const [transactions, setTransactions] = useState([]);
   const [form, setForm] = useState({
@@ -20,7 +20,7 @@ function App() {
   const [editId, setEditId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Load data from backend
+  // 🧩 Load data
   const load = async () => {
     try {
       const tx = await axios.get(`${API}/transactions`);
@@ -36,31 +36,41 @@ function App() {
     load();
   }, []);
 
-  // Add or update transaction
+  // ➕ Add or ✏️ Update
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.amount) return alert("Please enter amount");
 
-    if (editId) {
-      await axios.put(`${API}/transactions/${editId}`, form);
-      setEditId(null);
-    } else {
-      await axios.post(`${API}/transactions`, form);
+    try {
+      if (editId) {
+        // update
+        await axios.put(`${API}/transactions/${editId}`, form);
+        setEditId(null);
+      } else {
+        // add new
+        await axios.post(`${API}/transactions`, form);
+      }
+
+      setForm({ type: "credit", amount: "", description: "" });
+      load();
+    } catch (err) {
+      console.error("Error saving data:", err);
     }
-
-    setForm({ type: "credit", amount: "", description: "" });
-    load();
   };
 
-  // Delete
+  // ❌ Delete
   const handleDelete = async (id) => {
-    await axios.delete(`${API}/transactions/${id}`);
-    load();
+    try {
+      await axios.delete(`${API}/transactions/${id}`);
+      load();
+    } catch (err) {
+      console.error("Error deleting:", err);
+    }
   };
 
-  // Edit
+  // ✏️ Edit
   const handleEdit = (t) => {
-    setEditId(t.id);
+    setEditId(t._id); // ✅ use _id instead of id
     setForm({
       type: t.type,
       amount: t.amount,
@@ -68,13 +78,13 @@ function App() {
     });
   };
 
-  // Cancel Edit
+  // 🚫 Cancel Edit
   const cancelEdit = () => {
     setEditId(null);
     setForm({ type: "credit", amount: "", description: "" });
   };
 
-  // Filtered transactions
+  // 🔍 Filter transactions
   const filteredTransactions = transactions.filter((t) => {
     const term = searchTerm.toLowerCase();
     return (
@@ -94,6 +104,7 @@ function App() {
         <p><strong>Balance:</strong> ₹{balance.balance}</p>
       </div>
 
+      {/* ➕ Add / ✏️ Update Form */}
       <form className="form" onSubmit={handleSubmit}>
         <select
           value={form.type}
@@ -125,7 +136,7 @@ function App() {
         )}
       </form>
 
-      {/* 🔍 Search Bar */}
+      {/* 🔍 Search */}
       <input
         type="text"
         className="search"
@@ -134,17 +145,18 @@ function App() {
         onChange={(e) => setSearchTerm(e.target.value)}
       />
 
+      {/* 📋 Transaction List */}
       <ul className="transactions">
         {filteredTransactions.length > 0 ? (
           filteredTransactions.map((t) => (
-            <li key={t.id} className={t.type}>
+            <li key={t._id} className={t.type}>
               <div>
                 <span className="type">{t.type.toUpperCase()}</span> — ₹{t.amount}
                 <div className="desc">{t.description}</div>
               </div>
               <div className="actions">
                 <button className="edit" onClick={() => handleEdit(t)}>✏️ Edit</button>
-                <button className="delete" onClick={() => handleDelete(t.id)}>🗑️ Delete</button>
+                <button className="delete" onClick={() => handleDelete(t._id)}>🗑️ Delete</button>
               </div>
             </li>
           ))
